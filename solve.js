@@ -1,87 +1,50 @@
+/** 行を表す定数 */
 const ROW = 0
+/** 列を表す定数 */
 const COL = 1
 
+/** 上 */
 const UP = 0
+/** 右 */
 const RIGHT = 1
+/** 下 */
 const DOWN = 2
+/** 左 */
 const LEFT = 3
-
+/** 手数に対するコストの重み */
 const WEIGHT = 0.5
 
+const HEIGHT = 3
+
+const WIDTH = 3
+
+/** 現在検査対象のノード */
 var currentNodes = []
+/** チェック済みの盤面（ループしないように管理） */
 var checkedPattern = []
 
-var debugCnt = 0
 
-const fs = require('fs');
-const Netcat = require('node-netcat')
-let client = new Netcat.client(24912, '133.242.50.201')
-let writeStr = ''
-let cnt = 0
-client.start()
-client.on('data', function (data) {
-    writeStr = '\n' + data.toString('utf-8', 0, data.length)
-    fs.writeFile('res.txt', writeStr, function (err) { });
-
-    if (cnt > 0) {
-        return
-    }
-    cnt++
-    let ans = main(data.toString('utf-8', 0, data.length))
-    if (ans === '') {
-        return
-    }
-
-    writeStr += '\nans = ' + ans
-    fs.writeFile('res.txt', writeStr, function (err) { });
-
-    client.send(ans)
-})
+let res = solve('1,4,2,3,0,5,6,7,8')
+console.log(res)
 
 
-
-
-function main(data) {
-    // const execSync = require('child_process').execSync;
-    // const buf = execSync('nc 133.242.50.201 24912');
-    // let data = buf.toString('utf-8', 0, buf.length)
-    let ansExMatches = data.match(new RegExp('0[0-9]', "g"));
-    if (ansExMatches == null || ansExMatches.length != 9) {
-        // console.log('Length of ansExMatches must be 9.')
-        return ''
-    }
-
-    let puzzle = []
-    let cnt = 0
-    let row = []
-    for (ex of ansExMatches) {
-        if (cnt % 3 == 0) {
-            row = []
-        }
-        row.push(Number(ex))
-        if (cnt % 3 == 2) {
-            puzzle.push(row)
-        }
-        cnt++
-    }
-    // return
-
-    let firstNode = {
+/** パズルを解く。
+ * @param data 0-9が一度づつ現れる文字列。 ex. 1,5,3,...,8
+ */
+function solve(data) {
+    let puzzle = createPuzzleByString(data)
+    currentNodes.push({
         puzzle: puzzle,
         path: [],
         hash: ''
-    }
-    currentNodes.push(firstNode)
+    })
 
-    let flag = ''
-    let end = false
-    let date = new Date()
-    let startAt = (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) * 1000 + date.getMilliseconds()
-    while (!end) {
+    while (true) {
         if (currentNodes.lengh == 0) {
-            return ''
+            throw new Error('There is no more nodes to be checked.')
         }
 
+        // 検査対象のノードの中で最もコストの小さいものを取得
         let minCost = calcTotalCost(currentNodes[0])
         let node = currentNodes[0]
         for (let i = 0; i < currentNodes.length; i++) {
@@ -92,90 +55,83 @@ function main(data) {
             }
         }
 
+        // 最もコストの小さいノードを対象に、検索を進める
         let res = searchCurrent(node, calcTotalCost(node))
 
         if (res) {
             return res.path.join(',')
         }
+    }
+}
 
-        let now = new Date()
-        if ((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds() > startAt + 20000) {
-            end = true
-        }
+/** 文字列データからパズルのデータを作成する */
+function createPuzzleByString(data) {
+    let ansExMatches = data.match(new RegExp('[0-9]', "g"));
+    if (ansExMatches == null || ansExMatches.length != 9) {
+        throw new Error('Given string must includes exact 9 numbers covering between 0 and 9.')
     }
 
-    // console.log('flag = ' + flag)
-    return ''
+    let puzzle = []
+    let cnt = 0
+    let row = []
+    for (ex of ansExMatches) {
+        if (cnt % WIDTH == 0) {
+            row = []
+        }
+        row.push(Number(ex))
+        if (cnt % WIDTH == WIDTH - 1) {
+            puzzle.push(row)
+        }
+        cnt++
+    }
+
+    return puzzle
 }
 
-
-function nowToString() {
-    let date = new Date()
-    return date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds() + ':' + date.getMilliseconds()
-}
-
+/** 
+ * 与えられたノードを、指定された最大コストを下回る子ノードについて再帰的に探索する
+ * @param node 探索するノード。puzzle, path, hash をフィールドに持つオブジェクト
+ * @param maxCost 探索する際に対象とする最大のコスト
+ * @param prefix デバッグで表示する際に階層を示す接頭辞
+ */
 function searchCurrent(node, maxCost, prefix = '') {
-    debugCnt++
+    // 完成しているなら探索を終了
     if (checkGoal(node.puzzle)) {
         return node
     }
-
+    // コストが高いものは探索を打ち切り
     let totalCost = calcTotalCost(node)
     if (totalCost > maxCost) {
         return false
     }
+    // １ステップで到達可能な状態を全て取得
     let children = createChildren(node)
+    // 既にチェックした盤面を除外
     children = children.filter(child => !checkedPattern.includes(puzzleToHash(child.puzzle)))
-
-    // let gChildren = []
-    // let newMaxCost = maxCost
-    // for (let child of children) {
-    //     let childTotalCost = calcTotalCost(child)
-    //     console.log('[cost] ' + childTotalCost + '  [maxCost] ' + maxCost)
-    //     if (childTotalCost < newMaxCost) {
-    //         newMaxCost = childTotalCost
-    //     }
-    //     // if (childTotalCost > maxCost) {
-    //     //     console.log('check!')
-    //     //     continue
-    //     // }
-    //     gChildren.push(child)
-    // }
-    // currentNodes.push(...gChildren)
-
+    // 検索対象に加える
     currentNodes.push(...children)
-    // maxcost = newMaxCost + 4
-    // newMaxCost += 0.65
-    // console.log(' ==> newMaxCost = ' + newMaxCost)
-    // currentNodes.push(...children)
-
+    // 現在のパズル盤面を検査済みに
     checkedPattern.push(puzzleToHash(node.puzzle))
-    // checkedPattern = Object.keys(checkedPattern.reduce((a, x) => {
-    //     a[x] = true
-    //     return a
-    // }, {}))
-
-    // nodeは不要になるので削除
-    currentNodes = currentNodes.filter(n => {
-        return n.hash !== node.hash
-    })
-
-    currentNodes = currentNodes.filter(n => {
-        return !checkedPattern.includes(puzzleToHash(n.puzzle))
-    })
+    // 現在のnodeを検査対象外に
+    currentNodes = currentNodes.filter(n => n.hash !== node.hash)
+    // 新たに別にチェックされている可能性があるので
+    currentNodes = currentNodes.filter(n => !checkedPattern.includes(puzzleToHash(n.puzzle)))
 
     for (let child of children) {
-        // console.log(puzzleToString(child.puzzle, prefix))
-        // console.log(prefix + '  => cost = ' + calcTotalCost(child))
-        // maxCost = calcTotalCost(child) + 1
+        // 再帰的に子ノードを検査（現在のコスト条件を満たす間は再帰的に探索を続ける）
         let res = searchCurrent(child, maxCost, prefix + '    ')
         if (!res) continue
         return res
     }
-
+    // 与えられた最大コストでは解が見つからなかったことを示す
     return false
 }
 
+
+/** 
+ * パズル盤面を文字列ハッシュ化する
+ * （ここでは 000-000-000 形式に１次元化するだけ）
+ */
 function puzzleToHash(puzzle) {
     let hash = ''
     for (let row of puzzle) {
@@ -200,7 +156,7 @@ function checkGoal(puzzle) {
     return true
 }
 
-
+/** ノードを見やすい形にする（デバッグ用） */
 function nodeToString(node, prefix = '') {
     let str = prefix + '{\n'
     str += puzzleToString(node.puzzle, prefix)
@@ -211,6 +167,7 @@ function nodeToString(node, prefix = '') {
     return str
 }
 
+/** パスを見やすい形にする（デバッグ用） */
 function pathToString(path, prefix = '') {
     let str = prefix + '  path: ['
     for (let p of path) {
@@ -220,6 +177,7 @@ function pathToString(path, prefix = '') {
     return str
 }
 
+/** パズルを見やすい形にする（デバッグ用） */
 function puzzleToString(puzzle, prefix = '') {
     let str = ''
     str += prefix + '  puzzle:\n' + prefix + '    [\n'
@@ -235,86 +193,73 @@ function puzzleToString(puzzle, prefix = '') {
     return str
 }
 
-
+/** ノードを特定するハッシュを作成する */
 function nodeToHash(node) {
     return node.path.reduce((a, x) => {
         return a + (a === '' ? '' : '-') + x
     }, '')
 }
 
+/** 与えられたノードから１ステップで到達可能なノードの配列を得る */
 function createChildren(node) {
+    // ０（ブランク）の位置を検出
     let blankPosition = searchBlank(node.puzzle)
-    let height = node.puzzle.length
-    let width = node.puzzle[0].length
+
     let children = []
 
-    if (blankPosition[COL] < width - 1) {
+    // 右
+    if (blankPosition[COL] < WIDTH - 1) {
         let path = copyArray(node.path)
         path.push(RIGHT)
-        let q = toRight(copyPuzzle(node.puzzle))
         children.push({
-            puzzle: q,
+            puzzle: toRight(copyPuzzle(node.puzzle)),
             path: path
         })
     }
+    // 上
     if (blankPosition[ROW] > 0) {
         let path = copyArray(node.path)
         path.push(UP)
-        let p = up(copyPuzzle(node.puzzle))
-        // *console.log(puzzleToString(p))
         children.push({
-            puzzle: p,
+            puzzle: up(copyPuzzle(node.puzzle)),
             path: path
         })
     }
+    // 左
     if (blankPosition[COL] > 0) {
         let path = copyArray(node.path)
         path.push(LEFT)
-        let r = toLeft(copyPuzzle(node.puzzle))
-        // *console.log(puzzleToString(r))
         children.push({
-            puzzle: r,
+            puzzle: toLeft(copyPuzzle(node.puzzle)),
             path: path
         })
     }
-    if (blankPosition[ROW] < height - 1) {
+    // 下
+    if (blankPosition[ROW] < HEIGHT - 1) {
         let path = copyArray(node.path)
         path.push(DOWN)
-        let s = down(copyPuzzle(node.puzzle))
-        // *console.log(puzzleToString(s))
         children.push({
-            puzzle: s,
+            puzzle: down(copyPuzzle(node.puzzle)),
             path: path
         })
     }
 
+    // ハッシュをつけて返す
     return children.map(child => {
         child.hash = nodeToHash(child)
         return child
     })
 }
 
-
+/** 与えられたノードのコストを返す */
 function calcTotalCost(node) {
     return node.path.length * WEIGHT + calcHeuristicCost(node.puzzle) * (1 - WEIGHT)
 }
 
-// function calcHeuristicCost(puzzle) {
-//     // *console.log(puzzleToString(puzzle))
-//     cost = 0
-//     cnt = 0
-//     for (let row of puzzle) {
-//         for (let col of row) {
-//             if (col !== cnt) {
-//                 cost++
-//             }
-//             cnt++
-//         }
-//     }
-//     // *console.log('[calcHeuristicCost] cost = ' + cost)
-//     return cost
-// }
-
+/** 
+ * 与えられたノードのヒューリスティックを返す。
+ * ここでは、結果が良いとされる各数字の本来の位置までのマンハッタン距離の合計 
+ * */
 function calcHeuristicCost(puzzle) {
     let cost = 0
     for (let row of puzzle) {
@@ -325,7 +270,10 @@ function calcHeuristicCost(puzzle) {
     return cost
 }
 
-
+/** 
+ * 与えられたパズルのブランクを上に移動させたものを返す。
+ * 副作用は伴わない
+ */
 function up(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
@@ -334,6 +282,10 @@ function up(puzzle) {
     return p
 }
 
+/** 
+ * 与えられたパズルのブランクを下に移動させたものを返す。
+ * 副作用は伴わない
+ */
 function down(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
@@ -342,6 +294,10 @@ function down(puzzle) {
     return p
 }
 
+/** 
+ * 与えられたパズルのブランクを右に移動させたものを返す。
+ * 副作用は伴わない
+ */
 function toRight(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
@@ -350,20 +306,19 @@ function toRight(puzzle) {
     return p
 }
 
+/** 
+ * 与えられたパズルのブランクを左に移動させたものを返す。
+ * 副作用は伴わない
+ */
 function toLeft(puzzle) {
     let blankPosition = searchBlank(puzzle)
-    // *console.log('[left]')
-    // *console.log(puzzleToString(puzzle))
     let p = copyArray(puzzle)
     p[blankPosition[ROW]][blankPosition[COL]] = p[blankPosition[ROW]][blankPosition[COL] - 1]
     p[blankPosition[ROW]][blankPosition[COL] - 1] = 0
-    // *console.log(puzzleToString(p))
     return p
 }
 
-
-
-
+/** ブランク（０）の座業を探す */
 function searchBlank(puzzle) {
     r = 0
     for (let row of puzzle) {
@@ -379,6 +334,7 @@ function searchBlank(puzzle) {
     return []
 }
 
+/** 配列をコピーする */
 function copyArray(arr) {
     if (!arr) {
         return []
@@ -386,6 +342,10 @@ function copyArray(arr) {
     return arr.slice(0)
 }
 
+/** 
+ * パズルをコピーする
+ * （本当はcopyArrayでやりたいが、うまくコピーできていないときがあるのでこちらを使う）
+ */
 function copyPuzzle(pzl) {
     let n = []
     for (let row of pzl) {
