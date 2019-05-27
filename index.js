@@ -1,6 +1,6 @@
-const constant = require('./constants/puzzleConstant.js')
-const util = require('./utils/mainUtil')
-const stringUtil = require('./utils/stringUtil')
+const constant = require('./src/constants/puzzleConstant.js')
+const util = require('./src/utils/mainUtil')
+const stringUtil = require('./src/utils/stringUtil')
 
 /** 現在検査対象のノード */
 var currentNodes = []

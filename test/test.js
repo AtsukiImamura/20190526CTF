@@ -1,7 +1,7 @@
-const solve = require('./index.js')
-const util = require('./utils/mainUtil')
-const constant = require('./constants/puzzleConstant.js')
-const stringUtil = require('./utils/stringUtil')
+const solve = require('../index.js')
+const util = require('../src/utils/mainUtil')
+const constant = require('../src/constants/puzzleConstant.js')
+const stringUtil = require('../src/utils/stringUtil')
 
 let p = createRundumPuzzle(100, 3, 3)
 console.log(stringUtil.puzzleToString(p))
@@ -36,7 +36,7 @@ function move(puzzle, direction) {
 
     let blankPosition = util.searchBlank(puzzle)
 
-    // 右
+    // 坳
     if (blankPosition[constant.COL] < width - 1 && direction == constant.RIGHT) {
         util.toRight(puzzle)
         return true

@@ -4,9 +4,7 @@
   "description": "Slide-Puzzle-Sovler with A star search algorithm.",
   "main": "build/index.js",
   "scripts": {
-    "test": "node ./dest/test.js",
-    "build": "webpack -p",
-    "watch": "webpack -w"
+    "test": "node ./test/test.js"
   },
   "repository": {
     "type": "git",
@@ -23,11 +21,5 @@
   },
   "homepage": "https://github.com/AtsukiImamura/puzzle#readme",
   "devDependencies": {
-    "babel-loader": "^8.0.6",
-    "webpack": "^4.32.2",
-    "webpack-cli": "^3.3.2",
-    "@babel/core": "^7.4.4",
-    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-    "@babel/preset-env": "^7.4.4"
   }
 }
