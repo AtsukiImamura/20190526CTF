@@ -1,22 +1,4 @@
-/** 行を表す定数 */
-const ROW = 0
-/** 列を表す定数 */
-const COL = 1
-
-/** 上 */
-const UP = 0
-/** 右 */
-const RIGHT = 1
-/** 下 */
-const DOWN = 2
-/** 左 */
-const LEFT = 3
-/** 手数に対するコストの重み */
-const WEIGHT = 0.5
-
-const HEIGHT = 3
-
-const WIDTH = 3
+import constant from './constants/puzzle_constant.js'
 
 /** 現在検査対象のノード */
 var currentNodes = []
@@ -24,14 +6,10 @@ var currentNodes = []
 var checkedPattern = []
 
 
-let res = solve('1,4,2,3,0,5,6,7,8')
-console.log(res)
-
-
 /** パズルを解く。
  * @param data 0-9が一度づつ現れる文字列。 ex. 1,5,3,...,8
  */
-function solve(data) {
+export default function (data) {
     let puzzle = createPuzzleByString(data)
     currentNodes.push({
         puzzle: puzzle,
@@ -75,11 +53,11 @@ function createPuzzleByString(data) {
     let cnt = 0
     let row = []
     for (ex of ansExMatches) {
-        if (cnt % WIDTH == 0) {
+        if (cnt % constant.WIDTH == 0) {
             row = []
         }
         row.push(Number(ex))
-        if (cnt % WIDTH == WIDTH - 1) {
+        if (cnt % constant.WIDTH == constant.WIDTH - 1) {
             puzzle.push(row)
         }
         cnt++
@@ -208,36 +186,36 @@ function createChildren(node) {
     let children = []
 
     // 右
-    if (blankPosition[COL] < WIDTH - 1) {
+    if (blankPosition[constant.COL] < constant.WIDTH - 1) {
         let path = copyArray(node.path)
-        path.push(RIGHT)
+        path.push(constant.RIGHT)
         children.push({
             puzzle: toRight(copyPuzzle(node.puzzle)),
             path: path
         })
     }
     // 上
-    if (blankPosition[ROW] > 0) {
+    if (blankPosition[constant.ROW] > 0) {
         let path = copyArray(node.path)
-        path.push(UP)
+        path.push(constant.UP)
         children.push({
             puzzle: up(copyPuzzle(node.puzzle)),
             path: path
         })
     }
     // 左
-    if (blankPosition[COL] > 0) {
+    if (blankPosition[constant.COL] > 0) {
         let path = copyArray(node.path)
-        path.push(LEFT)
+        path.push(constant.LEFT)
         children.push({
             puzzle: toLeft(copyPuzzle(node.puzzle)),
             path: path
         })
     }
     // 下
-    if (blankPosition[ROW] < HEIGHT - 1) {
+    if (blankPosition[constant.ROW] < constant.HEIGHT - 1) {
         let path = copyArray(node.path)
-        path.push(DOWN)
+        path.push(constant.DOWN)
         children.push({
             puzzle: down(copyPuzzle(node.puzzle)),
             path: path
@@ -253,7 +231,7 @@ function createChildren(node) {
 
 /** 与えられたノードのコストを返す */
 function calcTotalCost(node) {
-    return node.path.length * WEIGHT + calcHeuristicCost(node.puzzle) * (1 - WEIGHT)
+    return node.path.length * constant.WEIGHT + calcHeuristicCost(node.puzzle) * (1 - constant.WEIGHT)
 }
 
 /** 
@@ -277,8 +255,8 @@ function calcHeuristicCost(puzzle) {
 function up(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
-    p[blankPosition[ROW]][blankPosition[COL]] = p[blankPosition[ROW] - 1][blankPosition[COL]]
-    p[blankPosition[ROW] - 1][blankPosition[COL]] = 0
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL]] = p[blankPosition[constant.ROW] - 1][blankPosition[constant.COL]]
+    p[blankPosition[constant.ROW] - 1][blankPosition[constant.COL]] = 0
     return p
 }
 
@@ -289,8 +267,8 @@ function up(puzzle) {
 function down(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
-    p[blankPosition[ROW]][blankPosition[COL]] = p[blankPosition[ROW] + 1][blankPosition[COL]]
-    p[blankPosition[ROW] + 1][blankPosition[COL]] = 0
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL]] = p[blankPosition[constant.ROW] + 1][blankPosition[constant.COL]]
+    p[blankPosition[constant.ROW] + 1][blankPosition[constant.COL]] = 0
     return p
 }
 
@@ -301,8 +279,8 @@ function down(puzzle) {
 function toRight(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
-    p[blankPosition[ROW]][blankPosition[COL]] = p[blankPosition[ROW]][blankPosition[COL] + 1]
-    p[blankPosition[ROW]][blankPosition[COL] + 1] = 0
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL]] = p[blankPosition[constant.ROW]][blankPosition[constant.COL] + 1]
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL] + 1] = 0
     return p
 }
 
@@ -313,8 +291,8 @@ function toRight(puzzle) {
 function toLeft(puzzle) {
     let blankPosition = searchBlank(puzzle)
     let p = copyArray(puzzle)
-    p[blankPosition[ROW]][blankPosition[COL]] = p[blankPosition[ROW]][blankPosition[COL] - 1]
-    p[blankPosition[ROW]][blankPosition[COL] - 1] = 0
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL]] = p[blankPosition[constant.ROW]][blankPosition[constant.COL] - 1]
+    p[blankPosition[constant.ROW]][blankPosition[constant.COL] - 1] = 0
     return p
 }
 

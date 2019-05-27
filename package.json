@@ -1,15 +1,33 @@
 {
   "name": "puzzle",
   "version": "1.0.0",
-  "description": "",
-  "main": "solve.js",
+  "description": "Slide-Puzzle-Sovler with A star search algorithm.",
+  "main": "build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./dest/test.js",
+    "build": "webpack -p",
+    "watch": "webpack -w"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AtsukiImamura/puzzle.git"
+  },
+  "keywords": [
+    "Slide Puzzle",
+    "Search Algorithm"
+  ],
+  "author": "IMAMURA Atsuki",
   "license": "ISC",
-  "dependencies": {
-    "node-netcat": "^1.4.8"
+  "bugs": {
+    "url": "https://github.com/AtsukiImamura/puzzle/issues"
+  },
+  "homepage": "https://github.com/AtsukiImamura/puzzle#readme",
+  "devDependencies": {
+    "babel-loader": "^8.0.6",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2",
+    "@babel/core": "^7.4.4",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/preset-env": "^7.4.4"
   }
 }
