@@ -1,4 +1,4 @@
-import constant from './constants/puzzle_constant.js'
+const constant = require('./constants/puzzle_constant.js')
 
 /** 現在検査対象のノード */
 var currentNodes = []
@@ -9,7 +9,7 @@ var checkedPattern = []
 /** パズルを解く。
  * @param data 0-9が一度づつ現れる文字列。 ex. 1,5,3,...,8
  */
-export default function (data) {
+module.exports = function (data) {
     let puzzle = createPuzzleByString(data)
     currentNodes.push({
         puzzle: puzzle,

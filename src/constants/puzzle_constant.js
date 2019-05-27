@@ -1,4 +1,4 @@
-export default {
+module.exports = {
     /** 行を表す定数 */
     ROW: 0,
     /** 列を表す定数 */
