@@ -1,6 +1,6 @@
 {
   "name": "slide-puzzle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Slide-Puzzle-Sovler with A star search algorithm.",
   "main": "build/index.js",
   "scripts": {
@@ -20,6 +20,5 @@
     "url": "https://github.com/AtsukiImamura/puzzle/issues"
   },
   "homepage": "https://github.com/AtsukiImamura/puzzle#readme",
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
