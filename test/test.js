@@ -3,9 +3,9 @@ const util = require('../src/utils/mainUtil')
 const constant = require('../src/constants/puzzleConstant.js')
 const stringUtil = require('../src/utils/stringUtil')
 
-let p = createRundumPuzzle(100, 3, 3)
+let p = createRundumPuzzle(4, 4, 4)
 console.log(stringUtil.puzzleToString(p))
-console.log(solve(p.join(',')))
+console.log(solve(p))
 
 
 function createRundumPuzzle(movingNum = 10, width = 3, height = 3) {
@@ -20,51 +20,41 @@ function createRundumPuzzle(movingNum = 10, width = 3, height = 3) {
     }
 
     let cnt = 0
+    let dircs = []
     while (cnt < movingNum) {
-        let direction = Math.floor(Math.random() * 4)
-        if (move(puzzle, direction)) {
-            cnt++
+        dircs[cnt % 2] = Math.floor(Math.random() * 4)
+        if (dircs[(cnt + 1) % 2] == (dircs[cnt % 2] + 2) % 4) {
+            continue
         }
+        puzzle = move(puzzle, dircs[cnt % 2])
+        cnt++
     }
 
     return puzzle
 }
 
-function move(puzzle, direction) {
-    let width = puzzle[0].length
-    let height = puzzle.length
+function move(pz, direction) {
+    let width = pz[0].length
+    let height = pz.length
 
-    let blankPosition = util.searchBlank(puzzle)
+    let blankPosition = util.searchBlank(pz)
 
-    // 坳
+    // Right
     if (blankPosition[constant.COL] < width - 1 && direction == constant.RIGHT) {
-        util.toRight(puzzle)
-        return true
+        return util.toRight(pz)
     }
-    // 上
+    // Up
     if (blankPosition[constant.ROW] > 0 && direction == constant.UP) {
-        util.up(puzzle)
-        return true
+        return util.up(pz)
     }
-    // 左
+    // Left
     if (blankPosition[constant.COL] > 0 && direction == constant.LEFT) {
-        util.toLeft(puzzle)
-        return true
+        return util.toLeft(pz)
     }
-    // 下
-    if (blankPosition[constant.ROW] < height - 1 && direction == constant.RIGHT) {
-        util.down(puzzle)
-        return true
+    // Down
+    if (blankPosition[constant.ROW] < height - 1 && direction == constant.DOWN) {
+        return util.down(pz)
     }
 
-    return false
-}
-
-function resToDirec(data) {
-    data = data.replace(/0/, '^')
-    data = data.replace(/1/, '>')
-    data = data.replace(/2/, '')
-    data = data.replace(/3/, '<')
-
-    return data
+    return pz
 }

@@ -1,5 +1,5 @@
 {
-  "name": "puzzle",
+  "name": "slide-puzzle",
   "version": "1.0.0",
   "description": "Slide-Puzzle-Sovler with A star search algorithm.",
   "main": "build/index.js",

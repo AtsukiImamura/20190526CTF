@@ -12,10 +12,7 @@ module.exports = {
     DOWN: 2,
     /** 左 */
     LEFT: 3,
+
     /** 手数に対するコストの重み */
     WEIGHT: 0.4,
-
-    HEIGHT: 3,
-
-    WIDTH: 3
 }

@@ -2,16 +2,36 @@ const constant = require('./src/constants/puzzleConstant.js')
 const util = require('./src/utils/mainUtil')
 const stringUtil = require('./src/utils/stringUtil')
 
-/** 現在検査対象のノード */
+/** Nodes waiting to be searched. */
 var currentNodes = []
 var debugCnt = 0
 
+/** Width of puzzle */
+var PUZZLE_WIDTH = 0
+/** Height of puzzle */
+var PUZZLE_HEIGHT = 0
 
-/** パズルを解く。
- * @param data 0-9が一度づつ現れる文字列。 ex. 1,5,3,...,8
+
+/** 
+ * Solve the given puzzle. 
+ * The method throws Error as follow situation:
+ *   1. There is some wrong in given puzzle data.
+ *   2. There is no more nodes to be searched.
+ * There is recursive method in this method, so a stack over flow may occur.
+ * 
+ * @param puzzle Puzzle data. 
+ * Puzzle data must be an array. 
+ * Each element represents the row of the puzzle and Each element in it represents the column on the row.
  */
-module.exports = function (data) {
-    let puzzle = createPuzzleByString(data)
+module.exports = function (puzzle) {
+
+    let validationMessages = validatePuzzle(puzzle)
+    if (validationMessages.length > 0) {
+        throw new Error(validationMessages.join(' | '))
+    }
+
+    PUZZLE_HEIGHT = puzzle.length
+    PUZZLE_WIDTH = puzzle[0].length
 
     currentNodes[stringUtil.puzzleToHash(puzzle)] = {
         puzzle: puzzle,
@@ -22,7 +42,7 @@ module.exports = function (data) {
     let cnt = 0
     while (true) {
         let hashList = Object.keys(currentNodes)
-        if (hashList.lengh < 1) {
+        if (hashList.length < 1) {
             console.log('check!!!')
             throw new Error('There is no more nodes to be checked.')
         }
@@ -53,35 +73,48 @@ module.exports = function (data) {
     }
 }
 
-/** 文字列データからパズルのデータを作成する */
-function createPuzzleByString(data) {
-    let ansExMatches = data.match(new RegExp('[0-9]', "g"));
-    if (ansExMatches == null || ansExMatches.length != 9) {
-        throw new Error('Given string must includes exact 9 numbers covering between 0 and 9.')
-    }
 
-    let puzzle = []
-    let cnt = 0
-    let row = []
-    for (ex of ansExMatches) {
-        if (cnt % constant.WIDTH == 0) {
-            row = []
-        }
-        row.push(Number(ex))
-        if (cnt % constant.WIDTH == constant.WIDTH - 1) {
-            puzzle.push(row)
-        }
-        cnt++
-    }
+function validatePuzzle(puzzle) {
+    let messages = []
+    if (!_validateNull(puzzle))
+        messages.push('Puzzle must not be null.')
+    if (!_validateType(puzzle))
+        messages.push('Puzzle must not be an array.')
+    if (!_validateShape(puzzle))
+        messages.push('Shape of the puzzle is sketchy.')
 
-    return puzzle
+    return messages
 }
 
+function _validateNull(puzzle) {
+    return puzzle != undefined & puzzle != null
+}
+
+function _validateType(puzzle) {
+    return typeof puzzle === 'object'
+}
+
+function _validateShape(puzzle) {
+    let width = 0
+    try {
+        width = puzzle[0].length
+        for (row of puzzle) {
+            if (row.length != width) {
+                return false
+            }
+        }
+    } catch (e) {
+        return false
+    }
+    return true
+}
+
+
 /** 
- * 与えられたノードを、指定された最大コストを下回る子ノードについて再帰的に探索する
- * @param node 探索するノード。puzzle, path, hash をフィールドに持つオブジェクト
- * @param maxCost 探索する際に対象とする最大のコスト
- * @param prefix デバッグで表示する際に階層を示す接頭辞
+ * Search recursively child nodes witch costs lower than given max cost.
+ * @param node A node to be searched. Node must have fields named 'puzzle', 'path', 'hash'.
+ * @param maxCost Max cost. 
+ * @param prefix Prefix witch represents hierarchy of node for debug
  */
 function searchCurrent(node, maxCost, prefix = '') {
     // 完成しているなら探索を終了
@@ -119,7 +152,9 @@ function searchCurrent(node, maxCost, prefix = '') {
 }
 
 
-/** 最終状態かチェック */
+/**
+ * Check that puzzle is solved ot not.
+ */
 function checkGoal(puzzle) {
     let cnt = 0
     for (let r = 0; r < puzzle.length; r++) {
@@ -133,8 +168,9 @@ function checkGoal(puzzle) {
 }
 
 
-
-/** 与えられたノードから１ステップで到達可能なノードの配列を得る */
+/**
+ * Get list of node that can be reached from given node by one step.
+ */
 function createChildren(node) {
     // ０（ブランク）の位置を検出
     let blankPosition = util.searchBlank(node.puzzle)
@@ -142,7 +178,7 @@ function createChildren(node) {
     let children = []
 
     // 右
-    if (blankPosition[constant.COL] < constant.WIDTH - 1) {
+    if (blankPosition[constant.COL] < PUZZLE_WIDTH - 1) {
         let path = util.copyArray(node.path)
         path.push(constant.RIGHT)
         children.push({
@@ -169,7 +205,7 @@ function createChildren(node) {
         })
     }
     // 下
-    if (blankPosition[constant.ROW] < constant.HEIGHT - 1) {
+    if (blankPosition[constant.ROW] < PUZZLE_HEIGHT - 1) {
         let path = util.copyArray(node.path)
         path.push(constant.DOWN)
         children.push({
@@ -186,14 +222,19 @@ function createChildren(node) {
 }
 
 /** 与えられたノードのコストを返す */
+/**
+ * Return the cost of given node.
+ * The cost is defined as the sum of length of path from the root to the node AND calcurated heuristic cost.
+ * @param {*} node 
+ */
 function calcTotalCost(node) {
     return node.path.length * constant.WEIGHT + calcHeuristicCost(node.puzzle) * (1 - constant.WEIGHT)
 }
 
-/** 
- * 与えられたノードのヒューリスティックを返す。
- * ここでは、結果が良いとされる各数字の本来の位置までのマンハッタン距離の合計 
- * */
+/**
+ * Calcurate heuristic cost of given puzzle.
+ * Cost is to calcurated as the sum of the Manhattan distance from each number's position to correct position.
+ */
 function calcHeuristicCost(puzzle) {
     let cost = 0
     for (let row of puzzle) {
